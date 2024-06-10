@@ -1,4 +1,5 @@
 import { RiHomeLine } from "react-icons/ri";
+import { CurrentDataTab } from "./CurrentDataTab";
 
 export const Sidebar = () => {
 
@@ -13,6 +14,7 @@ export const Sidebar = () => {
                         </a>
                     </li>
                 </ul>
+                <CurrentDataTab />
             </div>
         </aside>
     )
