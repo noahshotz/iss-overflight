@@ -10,7 +10,7 @@ interface IssDataProviderProps {
 
 export const IssDataProvider: React.FC<IssDataProviderProps> = ({ children }) => {
     const [issData, setIssData] = useState<IssNow | null>(null);
-    const [countdown, setCountdown] = useState<number>(10);
+    const [countdown, setCountdown] = useState<number>(6);
 
     const fetchData = useCallback(async () => {
         try {
@@ -30,13 +30,13 @@ export const IssDataProvider: React.FC<IssDataProviderProps> = ({ children }) =>
 
     useEffect(() => {
         fetchData();
-        const intervalId = setInterval(fetchData, 10000);
+        const intervalId = setInterval(fetchData, 6000);
         return () => clearInterval(intervalId);
     }, [fetchData]);
 
     useEffect(() => {
         const countdownInterval = setInterval(() => {
-            setCountdown(prev => (prev > 1 ? prev - 1 : 10));
+            setCountdown(prev => (prev > 1 ? prev - 1 : 6));
         }, 1000);
         return () => clearInterval(countdownInterval);
     }, []);
