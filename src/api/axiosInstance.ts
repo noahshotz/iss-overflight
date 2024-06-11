@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://api.open-notify.org/',
+    baseURL: 'https://api.wheretheiss.at/v1/',
 });
 
 export default axiosInstance;

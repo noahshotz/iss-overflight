@@ -1,6 +1,7 @@
 // src/context/issContext.ts
 import { createContext, useContext } from 'react';
-import { IssNow } from '../interfaces/opennotify';
+import { IssNow } from '../interfaces/iss';
+import { TLE } from '../interfaces/tle';
 
 // Define the type for the context value
 interface IssDataContextType {
@@ -8,8 +9,15 @@ interface IssDataContextType {
     countdown: number;
 }
 
+interface TLEDataContextType {
+    tleData: TLE | null;
+    countdown: number;
+}
+
 // Create context with undefined as initial value to enforce provider usage
-const IssDataContext = createContext<IssDataContextType | undefined>(undefined);
+export const IssDataContext = createContext<IssDataContextType | undefined>(undefined);
+
+export const TLEDataContext = createContext<TLEDataContextType | undefined>(undefined);
 
 // Custom hook to use the IssDataContext
 export const useIssData = () => {
@@ -20,4 +28,10 @@ export const useIssData = () => {
     return context;
 };
 
-export default IssDataContext;
+export const useTLEData = () => {
+    const context = useContext(TLEDataContext);
+    if (context === undefined) {
+        throw new Error('useTLEData must be used within a TLEDataProvider');
+    }
+    return context;
+};
