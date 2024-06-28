@@ -3,6 +3,7 @@ import { IssDataProvider } from './context/IssDataProvider';
 import { TLEDataProvider } from "./context/TleDataProvider";
 import { Sidebar } from "./components/Sidebar"
 import { MapView } from "./components/MapView"
+import { DataOverlay } from "./components/DataOverlay";
 
 function App() {
 
@@ -10,15 +11,11 @@ function App() {
     <React.Fragment>
       <IssDataProvider>
         <TLEDataProvider>
-          <div className="wrapper dark:bg-zinc-900">
-            <Sidebar />
-            <div className="sm:ml-64">
-              <MapView />
-            </div>
-          </div>
+          <DataOverlay />
+          <MapView />
         </TLEDataProvider>
       </IssDataProvider>
-    </React.Fragment>
+    </React.Fragment >
   )
 }
 

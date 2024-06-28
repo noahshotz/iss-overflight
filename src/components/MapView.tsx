@@ -1,29 +1,20 @@
 import React, { useState, useEffect } from 'react';
 
 // mapbox-gl components
-import { Map, Source, Layer, LayerProps } from 'react-map-gl';
+import { Map, Source, Layer, LayerProps, Marker } from 'react-map-gl';
+import { Feature, LineString } from 'geojson';
 import 'mapbox-gl/dist/mapbox-gl.css';
-
-// iss data
+// iss data context
 import { useIssData, useTLEData } from '../context/issContext';
-
+// calculation utils
 import { calculateOrbit } from '../utils/TLEutils';
-
-import { Feature, LineString, Point } from 'geojson';
-
+// icons
+import { LiaSatelliteSolid } from "react-icons/lia";
 // nextui components
 import { Spinner } from '@nextui-org/react';
+import { IssNow } from '../interfaces/iss';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-const pointLayer: LayerProps = {
-    id: 'point',
-    type: 'circle',
-    paint: {
-        'circle-radius': 7,
-        'circle-color': '#007cbf',
-    },
-};
 
 const orbitLayer: LayerProps = {
     id: 'orbit',
@@ -33,30 +24,30 @@ const orbitLayer: LayerProps = {
         "line-join": "round", // Rounded corners for line joins
     },
     paint: {
-        'line-color': '#007cbf',
+        'line-color': '#fff',
         'line-width': 2,
     },
 };
 
 export const MapView: React.FC = () => {
-    const { issData } = useIssData(); // Abrufen der ISS-Daten aus dem Kontext
-    const { tleData } = useTLEData(); // Abrufen der TLE-Daten aus dem Kontext
-    const [pointData, setPointData] = useState<Feature<Point> | null>(null);
+    const { issData } = useIssData();
+    const { tleData } = useTLEData();
     const [orbitData, setOrbitData] = useState<Feature<LineString> | null>(null);
-
-    useEffect(() => {
-        if (issData) {
-            const { latitude, longitude } = issData;
-            setPointData({
-                type: 'Feature',
-                geometry: {
-                    type: 'Point',
-                    coordinates: [longitude, latitude], // GeoJSON erwartet Koordinaten als [Längengrad, Breitengrad]
-                },
-                properties: {}, // Muss vorhanden sein, auch wenn es leer ist
-            });
-        }
-    }, [issData]);
+    const [satelliteData, setSatelliteData] = useState<IssNow | null>({
+        name: '',
+        id: 0,
+        latitude: 0,
+        longitude: 0,
+        altitude: 0,
+        velocity: 0,
+        visibility: '',
+        footprint: 0,
+        timestamp: 0,
+        daynum: 0,
+        solar_lat: 0,
+        solar_lon: 0,
+        units: '',
+    });
 
     useEffect(() => {
         if (tleData) {
@@ -65,12 +56,20 @@ export const MapView: React.FC = () => {
                 type: 'Feature',
                 geometry: {
                     type: 'LineString',
-                    coordinates: orbit, // GeoJSON erwartet Koordinaten als [Längengrad, Breitengrad]
+                    coordinates: orbit, // Use processed coordinates
                 },
-                properties: {}, // Muss vorhanden sein, auch wenn es leer ist
+                properties: {},
             });
         }
     }, [tleData]);
+
+    useEffect(() => {
+        if (issData) {
+            setSatelliteData(issData);
+        }
+
+    }, [issData]);
+
 
     if (!issData) {
         return (
@@ -91,15 +90,27 @@ export const MapView: React.FC = () => {
                 initialViewState={{
                     longitude,
                     latitude,
-                    zoom: 2,
+                    zoom: 5,
                 }}
-                mapStyle="mapbox://styles/mapbox/streets-v9"
+                attributionControl={false}
+                mapStyle="mapbox://styles/egenusmax/clxxufklp000f01qpa6my5vuu"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
-                {pointData && (
-                    <Source type="geojson" data={pointData}>
-                        <Layer {...pointLayer} />
-                    </Source>
+                {satelliteData && (
+                    <Marker
+                        key={`sat-marker-${latitude}-${longitude}`}
+                        latitude={latitude}
+                        longitude={longitude}
+                    >
+                        <div className="relative left-30 flex flex-row gap-1 items-start">
+                            
+                            <div className="absolute bg-gray-800 px-3 py-1 min-w-48 text-right flex flex-col gap-1 right-10">
+                                <div className="leading-none font-medium text-white">{satelliteData.name.toUpperCase()}</div>
+                                <div className="leading-none font-normal text-gray-400">ID {satelliteData.id} V: {(satelliteData.velocity / 3600).toFixed(2)} km/s</div>
+                            </div>
+                            <div className="bg-gray-800 text-white text-2xl p-1"><LiaSatelliteSolid /></div>
+                        </div>
+                    </Marker>
                 )}
                 {orbitData && (
                     <Source type="geojson" data={orbitData}>
