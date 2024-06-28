@@ -14,6 +14,7 @@ import { LiaSatelliteSolid } from "react-icons/lia";
 import { Spinner } from '@nextui-org/react';
 import { SatNow } from '../interfaces/sat';
 import { CurrentDataTab } from './CurrentDataTab';
+import { getAllSatPositions } from '../api/SAT';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -68,8 +69,24 @@ export const MapView: React.FC = () => {
         if (satData) {
             setSatelliteData(satData);
         }
-
     }, [satData]);
+
+    const [allSatData, setAllSatData] = useState<SatNow[] | null>(null);
+    useEffect(() => {
+        getAllSatPositions()
+            .then((data) => {
+                setAllSatData(data);
+            })
+            .catch((error) => {
+                console.error('Error: ' + error);
+            });
+    }, []);
+
+    useEffect(() => {
+        if (allSatData) {
+            console.log(allSatData);
+        }
+    }, [allSatData]);
 
     const [showData, setShowData] = useState(false);
     const handleSatelliteClick = (id: number) => {
@@ -101,7 +118,7 @@ export const MapView: React.FC = () => {
                 initialViewState={{
                     longitude,
                     latitude,
-                    zoom: 5,
+                    zoom: 3,
                 }}
                 attributionControl={false}
                 mapStyle="mapbox://styles/egenusmax/clxxufklp000f01qpa6my5vuu"
