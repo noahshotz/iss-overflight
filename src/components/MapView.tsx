@@ -5,14 +5,15 @@ import { Map, Source, Layer, LayerProps, Marker } from 'react-map-gl';
 import { Feature, LineString } from 'geojson';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // iss data context
-import { useIssData, useTLEData } from '../context/issContext';
+import { useSatData, useTLEData } from '../context/satContext';
 // calculation utils
 import { calculateOrbit } from '../utils/TLEutils';
 // icons
 import { LiaSatelliteSolid } from "react-icons/lia";
 // nextui components
 import { Spinner } from '@nextui-org/react';
-import { IssNow } from '../interfaces/iss';
+import { SatNow } from '../interfaces/sat';
+import { CurrentDataTab } from './CurrentDataTab';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -30,10 +31,10 @@ const orbitLayer: LayerProps = {
 };
 
 export const MapView: React.FC = () => {
-    const { issData } = useIssData();
+    const { satData } = useSatData();
     const { tleData } = useTLEData();
     const [orbitData, setOrbitData] = useState<Feature<LineString> | null>(null);
-    const [satelliteData, setSatelliteData] = useState<IssNow | null>({
+    const [satelliteData, setSatelliteData] = useState<SatNow | null>({
         name: '',
         id: 0,
         latitude: 0,
@@ -64,28 +65,38 @@ export const MapView: React.FC = () => {
     }, [tleData]);
 
     useEffect(() => {
-        if (issData) {
-            setSatelliteData(issData);
+        if (satData) {
+            setSatelliteData(satData);
         }
 
-    }, [issData]);
+    }, [satData]);
 
+    const [showData, setShowData] = useState(false);
+    const handleSatelliteClick = (id: number) => {
+        console.log('Satellite clicked', id);
+        setShowData(true);
+    };
 
-    if (!issData) {
+    if (!satData) {
         return (
-            <div className="w-full h-[100vh] flex items-center justify-center bg-slate-200">
-                <h2 className="text-2xl font-bold leading-none text-blue-700 flex items-center justify-center gap-2">
-                    <Spinner color="primary" />
+            <div className="w-full h-[100vh] flex items-center justify-center bg-black">
+                <h2 className="text-2xl font-bold leading-none text-gray-500 flex items-center justify-center gap-3">
+                    <Spinner color="default" />
                     Getting data
                 </h2>
             </div>
         );
     }
 
-    const { latitude, longitude } = issData;
+    const { latitude, longitude } = satData;
 
     return (
         <div className="w-full h-[100vh]">
+            {showData && (
+                <div className="absolute m-0 p-4 z-10 bottom-0 right-0">
+                    <CurrentDataTab />
+                </div>
+            )}
             <Map
                 initialViewState={{
                     longitude,
@@ -101,9 +112,9 @@ export const MapView: React.FC = () => {
                         key={`sat-marker-${latitude}-${longitude}`}
                         latitude={latitude}
                         longitude={longitude}
+                        onClick={() => handleSatelliteClick(satelliteData.id)}
                     >
                         <div className="relative left-30 flex flex-row gap-1 items-start">
-                            
                             <div className="absolute bg-gray-800 px-3 py-1 min-w-48 text-right flex flex-col gap-1 right-10">
                                 <div className="leading-none font-medium text-white">{satelliteData.name.toUpperCase()}</div>
                                 <div className="leading-none font-normal text-gray-400">ID {satelliteData.id} V: {(satelliteData.velocity / 3600).toFixed(2)} km/s</div>
@@ -112,7 +123,7 @@ export const MapView: React.FC = () => {
                         </div>
                     </Marker>
                 )}
-                {orbitData && (
+                {(orbitData && showData) && (
                     <Source type="geojson" data={orbitData}>
                         <Layer {...orbitLayer} />
                     </Source>

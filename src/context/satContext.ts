@@ -1,11 +1,11 @@
 // src/context/issContext.ts
 import { createContext, useContext } from 'react';
-import { IssNow } from '../interfaces/iss';
+import { SatNow } from '../interfaces/sat';
 import { TLE } from '../interfaces/tle';
 
 // Define the type for the context value
-interface IssDataContextType {
-    issData: IssNow | null;
+interface SatDataContextType {
+    satData: SatNow | null;
     countdown: number;
 }
 
@@ -15,15 +15,15 @@ interface TLEDataContextType {
 }
 
 // Create context with undefined as initial value to enforce provider usage
-export const IssDataContext = createContext<IssDataContextType | undefined>(undefined);
+export const SatDataContext = createContext<SatDataContextType | undefined>(undefined);
 
 export const TLEDataContext = createContext<TLEDataContextType | undefined>(undefined);
 
-// Custom hook to use the IssDataContext
-export const useIssData = () => {
-    const context = useContext(IssDataContext);
+// Custom hook to use the SatDataContext
+export const useSatData = () => {
+    const context = useContext(SatDataContext);
     if (context === undefined) {
-        throw new Error('useIssData must be used within a IssDataProvider');
+        throw new Error('useSatData must be used within a IssDataProvider');
     }
     return context;
 };

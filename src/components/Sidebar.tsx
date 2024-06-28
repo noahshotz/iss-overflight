@@ -1,4 +1,3 @@
-import { RiHomeLine } from "react-icons/ri";
 import { CurrentDataTab } from "./CurrentDataTab";
 
 export const Sidebar = () => {

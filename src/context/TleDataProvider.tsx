@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, ReactNode } from 'react';
-import { TLEDataContext } from './issContext';
-import { getISSTLE } from '../api/ISS';
+import { TLEDataContext } from './satContext';
+import { getSatTLE } from '../api/SAT';
 import { TLE } from '../interfaces/tle';
 
 // Define props for the provider
@@ -14,7 +14,7 @@ export const TLEDataProvider: React.FC<TLEDataProviderProps> = ({ children }) =>
 
     const fetchData = useCallback(async () => {
         try {
-            const data = await getISSTLE();
+            const data = await getSatTLE();
             setTLEData(data);
         } catch (error) {
             console.error('Error fetching TLE data:', error);

@@ -1,21 +1,21 @@
 import React, { useState, useEffect, useCallback, ReactNode } from 'react';
-import { IssDataContext } from './issContext';
-import { getISSPosition } from '../api/ISS';
-import { IssNow } from '../interfaces/iss';
+import { SatDataContext } from './satContext';
+import { getSatPosition } from '../api/SAT';
+import { SatNow } from '../interfaces/sat';
 
 // Define props for the provider
-interface IssDataProviderProps {
+interface SatDataProviderProps {
     children: ReactNode;
 }
 
-export const IssDataProvider: React.FC<IssDataProviderProps> = ({ children }) => {
-    const [issData, setIssData] = useState<IssNow | null>(null);
+export const SatDataProvider: React.FC<SatDataProviderProps> = ({ children }) => {
+    const [satData, setSatData] = useState<SatNow | null>(null);
     const [countdown, setCountdown] = useState<number>(2);
 
     const fetchData = useCallback(async () => {
         try {
-            const data = await getISSPosition();
-            const parsedData: IssNow = {
+            const data = await getSatPosition();
+            const parsedData: SatNow = {
                 ...data,
                 latitude: data.latitude,
                 longitude: data.longitude,
@@ -28,7 +28,7 @@ export const IssDataProvider: React.FC<IssDataProviderProps> = ({ children }) =>
                 solar_lat: data.solar_lat,
                 solar_lon: data.solar_lon,
             };
-            setIssData(parsedData);
+            setSatData(parsedData);
         } catch (error) {
             console.error('Error fetching ISS data:', error);
         }
@@ -48,8 +48,8 @@ export const IssDataProvider: React.FC<IssDataProviderProps> = ({ children }) =>
     }, []);
 
     return (
-        <IssDataContext.Provider value={{ issData, countdown }}>
+        <SatDataContext.Provider value={{ satData, countdown }}>
             {children}
-        </IssDataContext.Provider>
+        </SatDataContext.Provider>
     );
 };
