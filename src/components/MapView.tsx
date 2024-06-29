@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // mapbox-gl components
-import { Map, Source, Layer, Marker, GeolocateControl, FullscreenControl, NavigationControl, ScaleControl } from 'react-map-gl';
+import { Map, Source, Layer, Marker, NavigationControl } from 'react-map-gl';
 import { Feature, LineString } from 'geojson';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // iss data context
@@ -14,16 +14,19 @@ import { Spinner } from '@nextui-org/react';
 import { SatNow } from '../interfaces/sat';
 import { CurrentDataTab } from './CurrentDataTab';
 import { getAllSatPositions } from '../api/SAT';
-import { orbitLayerPassive, orbitLayerActive } from '../const/map';
+import { dateLineData, createOrbitGeometry } from '../const/map';
 import { useUserLocation } from '../context/userLocationContext';
 import { UserLocation } from './UserLocation';
+import { dateLineIndicator, orbitLayerActive, orbitLayerPassive1, orbitLayerPassive2 } from '../const/mapstyles';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 export const MapView: React.FC = () => {
     const { satData } = useSatData();
     const { tleData } = useTLEData();
-    const [orbitData, setOrbitData] = useState<Feature<LineString> | null>(null);
+    const [orbitData1, setOrbitData1] = useState<Feature<LineString> | null>(null);
+    const [orbitData2, setOrbitData2] = useState<Feature<LineString> | null>(null);
+
     const [satelliteData, setSatelliteData] = useState<SatNow | null>({
         name: '',
         id: 0,
@@ -43,14 +46,8 @@ export const MapView: React.FC = () => {
     useEffect(() => {
         if (tleData) {
             const orbit = calculateOrbit(tleData);
-            setOrbitData({
-                type: 'Feature',
-                geometry: {
-                    type: 'LineString',
-                    coordinates: orbit, // Use processed coordinates
-                },
-                properties: {},
-            });
+            setOrbitData1(createOrbitGeometry(orbit)[0]);
+            setOrbitData2(createOrbitGeometry(orbit)[1]);
         }
     }, [tleData]);
 
@@ -137,6 +134,7 @@ export const MapView: React.FC = () => {
         }
     }, [fetchUserLocation]);
 
+
     if (!satData || isUserLocationLoading) {
         return (
             <div className="w-full h-[100vh] flex items-center justify-center bg-black">
@@ -158,6 +156,9 @@ export const MapView: React.FC = () => {
                 </div>
             )}
             <Map
+                projection={{
+                    name: 'globe',
+                }}
                 initialViewState={{
                     longitude,
                     latitude,
@@ -167,7 +168,6 @@ export const MapView: React.FC = () => {
                 mapStyle="mapbox://styles/egenusmax/clxxufklp000f01qpa6my5vuu"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
-                <FullscreenControl position="top-right" />
                 <NavigationControl position="top-right" />
                 {userLocation && <UserLocation location={userLocation} />}
                 {satelliteData && (
@@ -186,16 +186,26 @@ export const MapView: React.FC = () => {
                         </div>
                     </Marker>
                 )}
-                {(orbitData && !showData) && (
-                    <Source type="geojson" data={orbitData}>
-                        <Layer {...orbitLayerPassive} />
+                {(orbitData1 && !showData) && (
+                    <Source type="geojson" data={orbitData1}>
+                        <Layer {...orbitLayerPassive1} />
                     </Source>
+
                 )}
-                {(orbitData && showData) && (
-                    <Source type="geojson" data={orbitData}>
+                {(orbitData2 && !showData) && (
+                    <Source type="geojson" data={orbitData2}>
+                        <Layer {...orbitLayerPassive2} />
+                    </Source>
+
+                )}
+                {(orbitData1 && showData) && (
+                    <Source type="geojson" data={orbitData1}>
                         <Layer {...orbitLayerActive} />
                     </Source>
                 )}
+                <Source type="geojson" data={dateLineData}>
+                    <Layer {...dateLineIndicator} />
+                </Source>
             </Map>
         </div>
     );

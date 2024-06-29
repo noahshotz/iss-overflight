@@ -14,40 +14,36 @@ export function calculateOrbit(tle: TLE, numPoints: number = 90): number[][] {
 
         const positionAndVelocity = satellite.propagate(satrec, time);
         const positionGd = satellite.eciToGeodetic(positionAndVelocity.position as satellite.EciVec3<number>, satellite.gstime(time));
-        let longitude = satellite.degreesLong(positionGd.longitude);
+        const longitude = satellite.degreesLong(positionGd.longitude);
         const latitude = satellite.degreesLat(positionGd.latitude);
-
-        // Wrap the longitude to handle international date line
-        longitude = wrapLongitude(longitude);
 
         positions.push([longitude, latitude]);
     }
 
-    // Add logic to handle the international date line
-    return handleInternationalDateLine(positions);
-}
+    // Adjust longitudes to handle 180th meridian crossing
+    for (let i = 1; i < positions.length; i++) {
+        const prevLng = positions[i - 1][0];
+        let currLng = positions[i][0];
 
-export function wrapLongitude(lon: number): number {
-    return ((lon + 180) % 360 + 360) % 360 - 180;
-}
-
-export function handleInternationalDateLine(positions: number[][]): number[][] {
-    const fixedPositions: number[][] = [];
-    let prevLon = positions[0][0];
-
-    positions.forEach(([lon, lat], index) => {
-        // Detect jump across the date line
-        if (index > 0 && Math.abs(lon - prevLon) > 180) {
-            if (lon > prevLon) {
-                fixedPositions.push([prevLon > 0 ? 180 : -180, lat]);
-                fixedPositions.push([lon > 0 ? -180 : 180, lat]);
+        if (Math.abs(currLng - prevLng) > 180) {
+            if (currLng > prevLng) {
+                currLng -= 360;
             } else {
-                fixedPositions.push([prevLon > 0 ? 180 : -180, lat]);
-                fixedPositions.push([lon > 0 ? -180 : 180, lat]);
+                currLng += 360;
             }
+            positions[i][0] = currLng;
         }
-        fixedPositions.push([lon, lat]);
-        prevLon = lon;
-    });
-    return fixedPositions;
+    }
+
+    // Normalize longitudes back to the range [-180, 180]
+    for (let i = 0; i < positions.length; i++) {
+        while (positions[i][0] < -180) {
+            positions[i][0] += 360;
+        }
+        while (positions[i][0] > 180) {
+            positions[i][0] -= 360;
+        }
+    }
+
+    return positions;
 }
