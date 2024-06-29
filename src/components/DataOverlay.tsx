@@ -1,7 +1,6 @@
 import React from "react";
 
 export const DataOverlay: React.FC = () => {
-
     return (
         <React.Fragment>
             <div className="absolute m-0 p-4 z-10 ">
@@ -10,5 +9,4 @@ export const DataOverlay: React.FC = () => {
             </div>
         </React.Fragment>
     )
-
 };

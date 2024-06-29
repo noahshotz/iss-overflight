@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState, useEffect, useCallback } from 'react';
 // mapbox-gl components
-import { Map, Source, Layer, LayerProps, Marker } from 'react-map-gl';
+import { Map, Source, Layer, Marker, GeolocateControl, FullscreenControl, NavigationControl, ScaleControl } from 'react-map-gl';
 import { Feature, LineString } from 'geojson';
 import 'mapbox-gl/dist/mapbox-gl.css';
 // iss data context
@@ -15,21 +14,11 @@ import { Spinner } from '@nextui-org/react';
 import { SatNow } from '../interfaces/sat';
 import { CurrentDataTab } from './CurrentDataTab';
 import { getAllSatPositions } from '../api/SAT';
+import { orbitLayerPassive, orbitLayerActive } from '../const/map';
+import { useUserLocation } from '../context/userLocationContext';
+import { UserLocation } from './UserLocation';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-
-const orbitLayer: LayerProps = {
-    id: 'orbit',
-    type: 'line',
-    layout: {
-        "line-cap": "round", // Rounded ends for the lines
-        "line-join": "round", // Rounded corners for line joins
-    },
-    paint: {
-        'line-color': '#fff',
-        'line-width': 2,
-    },
-};
 
 export const MapView: React.FC = () => {
     const { satData } = useSatData();
@@ -94,7 +83,61 @@ export const MapView: React.FC = () => {
         setShowData(true);
     };
 
-    if (!satData) {
+    const [isUserLocationLoading, setIsUserLocationLoading] = useState<boolean>(true);
+    const { userLocation, setUserLocation } = useUserLocation();
+
+    /**
+     * Get user location
+     */
+    const fetchUserLocation = useCallback(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userCoords = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    setUserLocation(userCoords);
+                    setIsUserLocationLoading(false);
+                },
+                (error) => {
+                    setIsUserLocationLoading(false);
+                    if (error.code === 1) {
+                        console.log("User denied geolocation");
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+            setIsUserLocationLoading(false);
+        }
+    }, [setUserLocation]);
+
+    /**
+     * Check user location permission and fetch user location on mount
+     */
+    useEffect(() => {
+        if (navigator.permissions) {
+            navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+                if (result.state === 'denied') {
+                    setIsUserLocationLoading(false);
+                } else if (result.state === 'granted') {
+                    fetchUserLocation();
+                } else {
+                    fetchUserLocation();
+                }
+            });
+        } else {
+            fetchUserLocation();
+        }
+    }, [fetchUserLocation]);
+
+    if (!satData || isUserLocationLoading) {
         return (
             <div className="w-full h-[100vh] flex items-center justify-center bg-black">
                 <h2 className="text-2xl font-bold leading-none text-gray-500 flex items-center justify-center gap-3">
@@ -124,6 +167,9 @@ export const MapView: React.FC = () => {
                 mapStyle="mapbox://styles/egenusmax/clxxufklp000f01qpa6my5vuu"
                 mapboxAccessToken={MAPBOX_TOKEN}
             >
+                <FullscreenControl position="top-right" />
+                <NavigationControl position="top-right" />
+                {userLocation && <UserLocation location={userLocation} />}
                 {satelliteData && (
                     <Marker
                         key={`sat-marker-${latitude}-${longitude}`}
@@ -131,8 +177,8 @@ export const MapView: React.FC = () => {
                         longitude={longitude}
                         onClick={() => handleSatelliteClick(satelliteData.id)}
                     >
-                        <div className="relative left-30 flex flex-row gap-1 items-start">
-                            <div className="absolute bg-gray-800 px-3 py-1 min-w-48 text-right flex flex-col gap-1 right-10">
+                        <div className="relative left-30">
+                            <div className="absolute bg-gray-800 px-3 py-1 min-w-48 text-right flex flex-col gap-1 right-9">
                                 <div className="leading-none font-medium text-white">{satelliteData.name.toUpperCase()}</div>
                                 <div className="leading-none font-normal text-gray-400">ID {satelliteData.id} V: {(satelliteData.velocity / 3600).toFixed(2)} km/s</div>
                             </div>
@@ -140,9 +186,14 @@ export const MapView: React.FC = () => {
                         </div>
                     </Marker>
                 )}
+                {(orbitData && !showData) && (
+                    <Source type="geojson" data={orbitData}>
+                        <Layer {...orbitLayerPassive} />
+                    </Source>
+                )}
                 {(orbitData && showData) && (
                     <Source type="geojson" data={orbitData}>
-                        <Layer {...orbitLayer} />
+                        <Layer {...orbitLayerActive} />
                     </Source>
                 )}
             </Map>
