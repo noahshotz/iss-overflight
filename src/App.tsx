@@ -3,6 +3,7 @@ import { SatDataProvider } from './context/SatDataProvider';
 import { TLEDataProvider } from "./context/TleDataProvider";
 import { MapView } from "./components/MapView"
 import { DataOverlay } from "./components/DataOverlay";
+import { UserLocationProvider } from "./context/userLocationContext";
 
 function App() {
 
@@ -11,7 +12,9 @@ function App() {
       <SatDataProvider>
         <TLEDataProvider>
           <DataOverlay />
-          <MapView />
+          <UserLocationProvider>
+            <MapView />
+          </UserLocationProvider>
         </TLEDataProvider>
       </SatDataProvider>
     </React.Fragment >
